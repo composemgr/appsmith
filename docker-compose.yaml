@@ -1,0 +1,55 @@
+# nginx proxy address - http://172.17.0.1:8091
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "1"
+
+services:
+  appsmith:
+    image: appsmith/appsmith-ce:latest
+    container_name: appsmith-app
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - appsmith
+    ports:
+      - "8091:80"
+    environment:
+      TZ: ${TZ:-America/New_York}
+      DATABASE_URL: mongodb://${DB_ADMIN_NAME:-root}:${DB_ADMIN_PASS:-changeme_root_password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
+    volumes:
+      - ./rootfs/data/appsmith:/data
+      - ./rootfs/config/appsmith:/config
+    depends_on:
+      - appsmith-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  appsmith-db:
+    image: mongo:7
+    container_name: appsmith-db
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - appsmith
+    environment:
+      TZ: ${TZ:-America/New_York}
+      MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-appsmith}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_root_password}
+    volumes:
+      - ./rootfs/db/mongodb/appsmith:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  appsmith:
+    external: false
