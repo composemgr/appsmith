@@ -20,8 +20,8 @@ services:
       TZ: ${TZ:-America/New_York}
       DATABASE_URL: mongodb://${DB_ADMIN_NAME:-root}:${DB_ADMIN_PASS:-changeme_root_password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
     volumes:
-      - ./rootfs/data/appsmith:/data
-      - ./rootfs/config/appsmith:/config
+      - ./volumes/data/appsmith:/data
+      - ./volumes/config/appsmith:/config
     depends_on:
       - appsmith-db
     healthcheck:
@@ -43,7 +43,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_root_password}
     volumes:
-      - ./rootfs/data/db/mongodb/appsmith:/data/db
+      - ./volumes/data/db/mongodb/appsmith:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 30s
