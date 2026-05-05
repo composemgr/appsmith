@@ -51,9 +51,9 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/appsmith` - Data storage
-- `./rootfs/config/appsmith` - Data storage
-- `./rootfs/data/db/mongodb/appsmith` - Data storage
+- `./volumes/data/appsmith` - Data storage
+- `./volumes/config/appsmith` - Data storage
+- `./volumes/data/db/mongodb/appsmith` - Data storage
 
 ## 🔐 Security
 
