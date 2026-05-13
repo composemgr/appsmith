@@ -15,12 +15,32 @@ services:
     hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
     logging: *default-logging
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://appsmith-app:80'
+      - 'cloudflare.hostname=appsmith.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.appsmith-app.entrypoints=http'
+      - 'traefik.http.routers.appsmith-app-secure.tls=true'
+      - 'traefik.http.routers.appsmith-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.appsmith-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.appsmith-app.middlewares=appsmith-app-https-redirect'
+      - 'traefik.http.routers.appsmith-app-secure.entrypoints=https'
+      - 'traefik.http.routers.appsmith-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.appsmith-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.appsmith-app-secure.service=appsmith-app'
+      - 'traefik.http.services.appsmith-app.loadbalancer.server.port=80'
     networks:
       - appsmith
+      - proxy
+      - cloudflare
     ports:
       - "172.17.0.1:8091:80"
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: appsmith-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       APPSMITH_MONGODB_URI: mongodb://${DB_ADMIN_USER:-root}:${DB_ADMIN_PASS:-changeme_admin_password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
       APPSMITH_ENCRYPTION_PASSWORD: ${ENCRYPTION_KEY:-changeme_encryption_key_min_32_chars}
       APPSMITH_ENCRYPTION_SALT: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
@@ -45,6 +65,7 @@ services:
       - appsmith
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: appsmith-db
       MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-appsmith}
       MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_USER:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
@@ -59,3 +80,7 @@ services:
 networks:
   appsmith:
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
