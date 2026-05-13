@@ -41,7 +41,7 @@ services:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: appsmith-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
-      APPSMITH_MONGODB_URI: mongodb://${DB_ADMIN_USER:-root}:${DB_ADMIN_PASS:-changeme_admin_password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
+      APPSMITH_MONGODB_URI: mongodb://${DB_ADMIN_NAME:-root}:${DB_ADMIN_PASS:-changeme_admin_password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
       APPSMITH_ENCRYPTION_PASSWORD: ${ENCRYPTION_KEY:-changeme_encryption_key_min_32_chars}
       APPSMITH_ENCRYPTION_SALT: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
     volumes:
@@ -67,7 +67,7 @@ services:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: appsmith-db
       MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-appsmith}
-      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_USER:-root}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
       - ./volumes/data/db/mongodb/appsmith:/data/db
