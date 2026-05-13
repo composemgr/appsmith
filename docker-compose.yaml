@@ -1,5 +1,6 @@
 # nginx proxy address - http://172.17.0.1:8091
 
+name: appsmith
 x-logging: &default-logging
   driver: json-file
   options:
@@ -9,19 +10,22 @@ x-logging: &default-logging
 services:
   appsmith:
     image: appsmith/appsmith-ce:latest
+    pull_policy: always
     container_name: appsmith-app
-    restart: unless-stopped
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
     logging: *default-logging
     networks:
       - appsmith
     ports:
-      - "8091:80"
+      - "172.17.0.1:8091:80"
     environment:
       TZ: ${TZ:-America/New_York}
-      DATABASE_URL: mongodb://${DB_ADMIN_NAME:-root}:${DB_ADMIN_PASS:-changeme_root_password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
+      APPSMITH_MONGODB_URI: mongodb://${DB_ADMIN_USER:-root}:${DB_ADMIN_PASS:-changeme_admin_password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
+      APPSMITH_ENCRYPTION_PASSWORD: ${ENCRYPTION_KEY:-changeme_encryption_key_min_32_chars}
+      APPSMITH_ENCRYPTION_SALT: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
     volumes:
-      - ./volumes/data/appsmith:/data
-      - ./volumes/config/appsmith:/config
+      - ./volumes/data/appsmith:/appsmith-stacks
     depends_on:
       - appsmith-db
     healthcheck:
@@ -31,17 +35,19 @@ services:
       retries: 3
 
   appsmith-db:
-    image: mongo:7
+    image: mongo:latest
+    pull_policy: always
     container_name: appsmith-db
-    restart: unless-stopped
+    hostname: appsmith-db
+    restart: always
     logging: *default-logging
     networks:
       - appsmith
     environment:
       TZ: ${TZ:-America/New_York}
       MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-appsmith}
-      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_root_password}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
       - ./volumes/data/db/mongodb/appsmith:/data/db
     healthcheck:
