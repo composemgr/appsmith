@@ -1,0 +1,71 @@
+name: appsmith
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: appsmith/appsmith-ce:latest
+    container_name: appsmith-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: appsmith-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      APPSMITH_MONGODB_URI: mongodb://${DB_ADMIN_NAME:-root}:${DB_ADMIN_PASS:-replace-with-a-random-password}@appsmith-db:27017/${DB_CREATE_DATABASE_NAME:-appsmith}
+      APPSMITH_ENCRYPTION_PASSWORD: ${ENCRYPTION_KEY:-changeme_encryption_key_min_32_chars}
+      APPSMITH_ENCRYPTION_SALT: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
+    volumes:
+      - './volumes/data/appsmith:/appsmith-stacks'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:80']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - 'cloudflare.enable=true'
+      - 'cloudflare.service=http://appsmith-app:80'
+      - 'cloudflare.hostname=${BASE_HOST_NAME:-$HOSTNAME}'
+    networks:
+      - appsmith
+      - cloudflare
+
+  db:
+    image: mongo:7
+    container_name: appsmith-db
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: appsmith-db
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: appsmith-db
+      MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-appsmith}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-replace-with-a-random-password}
+    volumes:
+      - './volumes/db/mongodb/appsmith:/data/db:z'
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - appsmith
+
+networks:
+  appsmith:
+    name: appsmith
+    external: false
+  cloudflare:
+    external: true
